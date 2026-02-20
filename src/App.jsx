@@ -223,6 +223,7 @@ function App() {
   const [newRoleForm, setNewRoleForm] = useState({
     name: '',
     client: '',
+    recruiterId: '',
     releasedDate: '',
     remarks: '',
   })
@@ -557,6 +558,30 @@ function App() {
       }
     },
     { ...recruiterStatsFromEntries },
+  )
+
+  const recruiterAssignedRolesCount = roles.reduce(
+    (accumulator, role) => {
+      if (!role.recruiterId || !selectedRecruiterIds.includes(role.recruiterId)) {
+        return accumulator
+      }
+
+      const inRange = role.releasedDate
+        ? isDateInRange(
+            role.releasedDate,
+            recruiterStatsRange,
+            recruiterCustomRangeStart,
+            recruiterCustomRangeEnd,
+          )
+        : true
+
+      if (!inRange) {
+        return accumulator
+      }
+
+      return accumulator + 1
+    },
+    0,
   )
 
   const selectedClientNames =
@@ -1389,7 +1414,12 @@ function App() {
   }
 
   const handleNewRoleSave = () => {
-    if (!newRoleForm.name || !newRoleForm.client || !newRoleForm.releasedDate) {
+    if (
+      !newRoleForm.name ||
+      !newRoleForm.client ||
+      !newRoleForm.releasedDate ||
+      !newRoleForm.recruiterId
+    ) {
       return
     }
 
@@ -1397,6 +1427,7 @@ function App() {
       id: `role-${Date.now()}`,
       name: newRoleForm.name,
       client: newRoleForm.client,
+      recruiterId: newRoleForm.recruiterId,
       releasedDate: newRoleForm.releasedDate,
       remarks: newRoleForm.remarks,
       status: 'Active',
@@ -1984,6 +2015,12 @@ function App() {
             </div>
             <div className="people-stats-metrics">
               <div className="people-stats-metric">
+                <span className="people-stats-metric-label">Roles assigned</span>
+                <span className="people-stats-metric-value">
+                  {recruiterAssignedRolesCount}
+                </span>
+              </div>
+              <div className="people-stats-metric">
                 <span className="people-stats-metric-label">Submissions</span>
                 <span className="people-stats-metric-value">
                   {recruiterStats.submissions}
@@ -2172,30 +2209,48 @@ function App() {
                   No roles match the selected filters.
                 </div>
               ) : (
-                rolesSidebarFiltered.map((role) => (
-                  <div key={role.id} className="people-list-card">
-                    <div className="people-list-name">{role.name}</div>
-                    <div className="people-list-meta">
-                      <span className="people-list-metric">{role.client}</span>
-                      <span
-                        className={
-                          role.status === 'Active'
-                            ? 'people-status-pill people-status-pill-active'
-                            : 'people-status-pill'
-                        }
-                      >
-                        {role.status}
-                      </span>
-                      <button
-                        type="button"
-                        className="btn-secondary btn-compact"
-                        onClick={() => handleOpenRoleStatusEditor(role)}
-                      >
-                        Edit
-                      </button>
+                rolesSidebarFiltered.map((role) => {
+                  const assignedRecruiter = recruiters.find(
+                    (recruiter) => recruiter.id === role.recruiterId,
+                  )
+
+                  return (
+                    <div key={role.id} className="people-list-card">
+                      <div className="people-list-name">{role.name}</div>
+                      <div className="people-list-meta">
+                        <span className="people-list-submeta">
+                          Client · {role.client}
+                        </span>
+                        {assignedRecruiter && (
+                          <span className="people-list-submeta">
+                            Recruiter · {assignedRecruiter.name}
+                          </span>
+                        )}
+                        <span
+                          className={
+                            role.status === 'Active'
+                              ? 'people-status-pill people-status-pill-active'
+                              : 'people-status-pill'
+                          }
+                        >
+                          {role.status}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-secondary btn-compact"
+                          onClick={() => handleOpenRoleStatusEditor(role)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      {role.remarks && (
+                        <div className="people-list-remark">
+                          {role.remarks}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </section>
@@ -2643,6 +2698,25 @@ function App() {
                     {activeClients.map((client) => (
                       <option key={client.id} value={client.name}>
                         {client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>Assign recruiter</label>
+                  <select
+                    value={newRoleForm.recruiterId}
+                    onChange={(event) =>
+                      setNewRoleForm((prev) => ({
+                        ...prev,
+                        recruiterId: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select recruiter</option>
+                    {activeRecruiters.map((recruiter) => (
+                      <option key={recruiter.id} value={recruiter.id}>
+                        {recruiter.name}
                       </option>
                     ))}
                   </select>
