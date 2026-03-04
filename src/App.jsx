@@ -1956,7 +1956,7 @@ function App() {
                   type="password"
                   value={welcomePassword}
                   onChange={(event) => setWelcomePassword(event.target.value)}
-                  placeholder="new user"
+                  placeholder="Enter Access Code"
                 />
               </div>
               {welcomePasswordError && (
