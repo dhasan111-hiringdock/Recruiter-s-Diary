@@ -413,6 +413,7 @@ function App() {
   })
   const [welcomePassword, setWelcomePassword] = useState('')
   const [welcomePasswordError, setWelcomePasswordError] = useState('')
+  const [showWelcomeNote, setShowWelcomeNote] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1550,6 +1551,7 @@ function App() {
       setWelcomePassword('')
       setWelcomePasswordError('')
       setShowWelcomeGate(false)
+      setShowWelcomeNote(true)
       return
     }
 
@@ -1971,6 +1973,50 @@ function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {showWelcomeNote && (
+        <div className="welcome-note-banner">
+          <div className="welcome-note-inner">
+            <h2>Welcome to Recruiter&apos;s Diary 👋</h2>
+            <p>
+              Thanks for taking the time to explore the platform.
+            </p>
+            <p>
+              To help you get a feel for how everything works, the system
+              currently includes sample data. This is just to
+              demonstrate how roles, submissions, updates, and analytics
+              flow through the workspace.
+            </p>
+            <p>
+              Feel free to click around, explore different sections, add
+              entries, and experiment with the features. The goal is to
+              make recruitment tracking simple, fast, and far less messy
+              than managing multiple spreadsheets.
+            </p>
+            <p>
+              This project is still evolving, and your feedback can
+              genuinely help make it better for the recruitment
+              community. If you notice any bugs, issues, or have ideas
+              for improvements, please don&apos;t hesitate to report
+              them.
+            </p>
+            <p>
+              You can always reach out at{' '}
+              <a href="mailto:dhasan111@gmail.com">
+                dhasan111@gmail.com
+              </a>
+              .
+            </p>
+            <p>Thank you again for being here. Happy recruiting!</p>
+            <button
+              type="button"
+              className="welcome-note-close"
+              onClick={() => setShowWelcomeNote(false)}
+            >
+              Got it
+            </button>
           </div>
         </div>
       )}
@@ -4200,9 +4246,9 @@ function App() {
                 <div className="askme-empty">
                   Ask questions like:
                   <br />
-                  • How many roles a client gets on average monthly
+                  • How many submissions each recruiter made this week
                   <br />
-                  • Kunal highest submission month and how many submissions he did
+                  • Which clients have the most active roles right now
                 </div>
               ) : (
                 <div className="askme-messages">
