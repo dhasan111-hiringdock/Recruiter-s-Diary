@@ -1442,6 +1442,208 @@
   margin-top: 1.1rem;
 }
 
+.analytics-aging-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.analytics-aging-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.analytics-aging-label {
+  width: 120px;
+  color: #9ca3af;
+}
+
+.analytics-aging-bar-track {
+  flex: 1;
+  position: relative;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  overflow: hidden;
+}
+
+.analytics-aging-bar {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.analytics-aging-bar-fresh {
+  background: linear-gradient(to right, #22c55e, #a3e635);
+}
+
+.analytics-aging-bar-warm {
+  background: linear-gradient(to right, #eab308, #facc15);
+}
+
+.analytics-aging-bar-aging {
+  background: linear-gradient(to right, #f97316, #fb923c);
+}
+
+.analytics-aging-bar-risk {
+  background: linear-gradient(to right, #ef4444, #b91c1c);
+}
+
+.analytics-aging-value {
+  min-width: 1.5rem;
+  text-align: right;
+  font-size: 0.78rem;
+  color: #e5e7eb;
+}
+
+.analytics-funnel {
+  margin-top: 0.8rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.analytics-funnel-header {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-bottom: 0.45rem;
+}
+
+.analytics-funnel-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.analytics-funnel-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.analytics-funnel-label {
+  width: 90px;
+  color: #e5e7eb;
+}
+
+.analytics-funnel-bar-track {
+  flex: 1;
+  position: relative;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  overflow: hidden;
+}
+
+.analytics-funnel-bar {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.analytics-funnel-bar-submissions {
+  background: linear-gradient(to right, #60a5fa, #22c55e);
+}
+
+.analytics-funnel-bar-interviews {
+  background: linear-gradient(to right, #a855f7, #f97316);
+}
+
+.analytics-funnel-bar-deals {
+  background: linear-gradient(to right, #f97316, #ef4444);
+}
+
+.analytics-funnel-value {
+  min-width: 1.5rem;
+  text-align: right;
+  font-size: 0.78rem;
+  color: #e5e7eb;
+}
+
+.analytics-client-winrate {
+  margin-top: 0.8rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.analytics-client-winrate-header {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-bottom: 0.45rem;
+}
+
+.analytics-client-winrate-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+}
+
+.analytics-client-winrate-row {
+  display: flex;
+  justify-content: space-between;
+  color: #e5e7eb;
+}
+
+.analytics-client-winrate-label {
+  color: #9ca3af;
+}
+
+.analytics-client-winrate-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-client-winrate-track {
+  margin-top: 0.35rem;
+  position: relative;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  overflow: hidden;
+}
+
+.analytics-client-winrate-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(to right, #22c55e, #16a34a);
+}
+
+.analytics-compare-section {
+  margin-top: 1.1rem;
+}
+
+.analytics-client-table {
+  margin-top: 0.6rem;
+}
+
+.analytics-client-table .submission-row-header {
+  font-size: 0.78rem;
+}
+
+.analytics-client-table .submission-row-body {
+  font-size: 0.78rem;
+}
+
+.analytics-role-filters {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.analytics-role-filters .field-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.analytics-role-filters select {
+  min-width: 10rem;
+}
+
 @keyframes modal-in {
   from {
     opacity: 0;

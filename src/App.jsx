@@ -218,6 +218,9 @@ const DEFAULT_ROLES = [
     accountManager: 'Alex Chen',
     client: 'Acme Commerce',
     recruiterId: 'rec-1',
+    level: 'Senior',
+    function: 'Product Management',
+    priority: 'High',
     releasedDate: SAMPLE_TODAY_KEY,
     remarks: 'Own roadmap for checkout and payments experience.',
     cvsSubmitted: 4,
@@ -234,6 +237,9 @@ const DEFAULT_ROLES = [
     accountManager: 'Priya Sharma',
     client: 'BlueSky Technologies',
     recruiterId: 'rec-2',
+    level: 'Mid',
+    function: 'Engineering',
+    priority: 'High',
     releasedDate: SAMPLE_TODAY_KEY,
     remarks: 'React and Node.js on a high-traffic B2B dashboard.',
     cvsSubmitted: 6,
@@ -250,6 +256,9 @@ const DEFAULT_ROLES = [
     accountManager: 'Alex Chen',
     client: 'Northstar Financial Services',
     recruiterId: 'rec-3',
+    level: 'Senior',
+    function: 'Risk & Analytics',
+    priority: 'Medium',
     releasedDate: SAMPLE_TODAY_KEY,
     remarks: 'Experience with retail lending portfolios and scorecards.',
     cvsSubmitted: 3,
@@ -266,6 +275,9 @@ const DEFAULT_ROLES = [
     accountManager: 'Maria Gonzalez',
     client: 'Innova Health',
     recruiterId: 'rec-4',
+    level: 'Mid',
+    function: 'Talent Acquisition',
+    priority: 'Medium',
     releasedDate: SAMPLE_TODAY_KEY,
     remarks: 'Build out non-clinical leadership hiring across regions.',
     cvsSubmitted: 2,
@@ -294,6 +306,9 @@ function App() {
     accountManager: '',
     client: '',
     recruiterId: '',
+    level: '',
+    function: '',
+    priority: '',
     releasedDate: '',
     cvsSubmitted: '',
     lastCvDate: '',
@@ -374,6 +389,10 @@ function App() {
   const [analyzeRange, setAnalyzeRange] = useState('week')
   const [analyzeCustomRangeStart, setAnalyzeCustomRangeStart] = useState('')
   const [analyzeCustomRangeEnd, setAnalyzeCustomRangeEnd] = useState('')
+  const [analyticsRoleFunctionFilter, setAnalyticsRoleFunctionFilter] =
+    useState('')
+  const [analyticsRolePriorityFilter, setAnalyticsRolePriorityFilter] =
+    useState('')
 
   const [statusRoleForm, setStatusRoleForm] = useState({
     roleId: '',
@@ -708,14 +727,88 @@ function App() {
     0,
   )
 
+  const recruiterFunnelMax = Math.max(
+    recruiterStats.submissions,
+    recruiterStats.interviews,
+    recruiterStats.deals,
+  )
+
+  const getRecruiterFunnelWidth = (value) => {
+    if (recruiterFunnelMax === 0) {
+      return '0%'
+    }
+
+    const percentage = Math.round((value / recruiterFunnelMax) * 100)
+    const safePercentage = Math.max(6, percentage)
+    return `${safePercentage}%`
+  }
+
   const selectedClientNames =
     focusedClientName && clients.some((client) => client.name === focusedClientName)
       ? [focusedClientName]
       : activeClients.map((client) => client.name)
 
-  const clientRoles = roles.filter((role) => selectedClientNames.includes(role.client))
+  const clientRoles = roles.filter(
+    (role) =>
+      selectedClientNames.includes(role.client) &&
+      roleMatchesAnalyticsFilters(role),
+  )
   const clientActiveRoles = clientRoles.filter((role) => role.status === 'Active')
   const clientClosedRoles = clientRoles.filter((role) => role.status === 'Closed')
+
+  const clientWinRateStats = clientRoles.reduce(
+    (accumulator, role) => {
+      if (role.status === 'Closed') {
+        return {
+          ...accumulator,
+          closed: accumulator.closed + 1,
+          deals:
+            accumulator.deals +
+            (role.subStatus && role.subStatus.toLowerCase() === 'deal' ? 1 : 0),
+        }
+      }
+      return {
+        ...accumulator,
+        open: accumulator.open + 1,
+      }
+    },
+    {
+      open: 0,
+      closed: 0,
+      deals: 0,
+    },
+  )
+
+  const clientComparisonStats = activeClients
+    .map((client) => {
+      const rolesForClient = roles.filter(
+        (role) => role.client === client.name && roleMatchesAnalyticsFilters(role),
+      )
+      const activeCount = rolesForClient.filter(
+        (role) => role.status === 'Active',
+      ).length
+      const closedCount = rolesForClient.filter(
+        (role) => role.status === 'Closed',
+      ).length
+      const dealsCount = rolesForClient.filter(
+        (role) =>
+          role.status === 'Closed' &&
+          role.subStatus &&
+          role.subStatus.toLowerCase() === 'deal',
+      ).length
+
+      const winRate =
+        closedCount > 0 ? Math.round((dealsCount / closedCount) * 100) : 0
+
+      return {
+        clientName: client.name,
+        activeCount,
+        closedCount,
+        dealsCount,
+        winRate,
+      }
+    })
+    .sort((a, b) => b.winRate - a.winRate || b.dealsCount - a.dealsCount)
 
   const filteredClientRoleIssueInsights = roleIssueInsights.filter((insight) => {
     if (!selectedClientNames.includes(insight.client)) {
@@ -1576,6 +1669,9 @@ function App() {
       accountManager: newRoleForm.accountManager || '',
       client: newRoleForm.client,
       recruiterId: newRoleForm.recruiterId,
+      level: newRoleForm.level || '',
+      function: newRoleForm.function || '',
+      priority: newRoleForm.priority || '',
       releasedDate: newRoleForm.releasedDate,
       cvsSubmitted: newRoleForm.cvsSubmitted
         ? parseInt(newRoleForm.cvsSubmitted, 10) || 0
@@ -1924,7 +2020,61 @@ function App() {
 
   const activeRoles = roles.filter((role) => role.status === 'Active')
 
+  const roleMatchesAnalyticsFilters = (role) => {
+    if (analyticsRoleFunctionFilter && role.function !== analyticsRoleFunctionFilter) {
+      return false
+    }
+
+    if (analyticsRolePriorityFilter && role.priority !== analyticsRolePriorityFilter) {
+      return false
+    }
+
+    return true
+  }
+
   const activeDeals = dealsLog.filter((record) => record.status === 'deal')
+
+  const analyticsActiveRoles = activeRoles.filter((role) =>
+    roleMatchesAnalyticsFilters(role),
+  )
+
+  const roleAgingBuckets = analyticsActiveRoles.reduce(
+    (accumulator, role) => {
+      if (!role.releasedDate) {
+        return accumulator
+      }
+
+      const releasedDate = new Date(role.releasedDate)
+      if (Number.isNaN(releasedDate.getTime())) {
+        return accumulator
+      }
+
+      const daysOpen = Math.max(
+        0,
+        Math.round(
+          (today.getTime() - releasedDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
+      )
+
+      if (daysOpen <= 15) {
+        accumulator.bucket0to15 += 1
+      } else if (daysOpen <= 30) {
+        accumulator.bucket16to30 += 1
+      } else if (daysOpen <= 60) {
+        accumulator.bucket31to60 += 1
+      } else {
+        accumulator.bucket60plus += 1
+      }
+
+      return accumulator
+    },
+    {
+      bucket0to15: 0,
+      bucket16to30: 0,
+      bucket31to60: 0,
+      bucket60plus: 0,
+    },
+  )
 
   const rolesSidebarFiltered = roles.filter((role) => {
     if (rolesSidebarStatus === 'Active' && role.status !== 'Active') {
@@ -2477,6 +2627,21 @@ function App() {
                         <span className="people-list-submeta">
                           Client · {role.client}
                         </span>
+                        {role.priority && (
+                          <span className="people-list-submeta">
+                            Priority · {role.priority}
+                          </span>
+                        )}
+                        {role.level && (
+                          <span className="people-list-submeta">
+                            Level · {role.level}
+                          </span>
+                        )}
+                        {role.function && (
+                          <span className="people-list-submeta">
+                            Function · {role.function}
+                          </span>
+                        )}
                         {role.location && (
                           <span className="people-list-submeta">
                             Location · {role.location}
@@ -2613,6 +2778,41 @@ function App() {
                     {activeClients.length} active
                   </span>
                 </div>
+              </div>
+            </div>
+            <div className="analytics-role-filters">
+              <div className="field-inline">
+                <label>Role function</label>
+                <select
+                  value={analyticsRoleFunctionFilter}
+                  onChange={(event) =>
+                    setAnalyticsRoleFunctionFilter(event.target.value)
+                  }
+                >
+                  <option value="">All</option>
+                  <option value="Tech">Tech</option>
+                  <option value="Product">Product</option>
+                  <option value="Design">Design</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Operations">Operations</option>
+                  <option value="HR">HR</option>
+                  <option value="Finance">Finance</option>
+                </select>
+              </div>
+              <div className="field-inline">
+                <label>Role priority</label>
+                <select
+                  value={analyticsRolePriorityFilter}
+                  onChange={(event) =>
+                    setAnalyticsRolePriorityFilter(event.target.value)
+                  }
+                >
+                  <option value="">All</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
               </div>
             </div>
             <div className="analytics-layout">
@@ -2771,6 +2971,61 @@ function App() {
                     </span>
                   </div>
                 </div>
+                <div className="analytics-funnel">
+                  <div className="analytics-funnel-header">
+                    <span>Funnel for selected range</span>
+                  </div>
+                  <div className="analytics-funnel-rows">
+                    <div className="analytics-funnel-row">
+                      <span className="analytics-funnel-label">Submissions</span>
+                      <div className="analytics-funnel-bar-track">
+                        <div
+                          className="analytics-funnel-bar analytics-funnel-bar-submissions"
+                          style={{
+                            width: getRecruiterFunnelWidth(
+                              recruiterStats.submissions,
+                            ),
+                          }}
+                        />
+                        <span className="analytics-funnel-value">
+                          {recruiterStats.submissions}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="analytics-funnel-row">
+                      <span className="analytics-funnel-label">Interviews</span>
+                      <div className="analytics-funnel-bar-track">
+                        <div
+                          className="analytics-funnel-bar analytics-funnel-bar-interviews"
+                          style={{
+                            width: getRecruiterFunnelWidth(
+                              recruiterStats.interviews,
+                            ),
+                          }}
+                        />
+                        <span className="analytics-funnel-value">
+                          {recruiterStats.interviews}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="analytics-funnel-row">
+                      <span className="analytics-funnel-label">Deals</span>
+                      <div className="analytics-funnel-bar-track">
+                        <div
+                          className="analytics-funnel-bar analytics-funnel-bar-deals"
+                          style={{
+                            width: getRecruiterFunnelWidth(
+                              recruiterStats.deals,
+                            ),
+                          }}
+                        />
+                        <span className="analytics-funnel-value">
+                          {recruiterStats.deals}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <div className="analytics-volume-bars">
                   <div className="analytics-volume-row">
                     <span className="analytics-volume-label">Submissions</span>
@@ -2821,6 +3076,95 @@ function App() {
                 </div>
               </div>
               <div className="analytics-panel">
+                <div className="analytics-panel-header">
+                  <h3>Roles aging</h3>
+                </div>
+                <div className="analytics-aging-body">
+                  <div className="analytics-aging-row">
+                    <div className="analytics-aging-label">0–15 days open</div>
+                    <div className="analytics-aging-bar-track">
+                      <div
+                        className="analytics-aging-bar analytics-aging-bar-fresh"
+                        style={{
+                          width:
+                            activeRoles.length === 0
+                              ? '0%'
+                              : `${Math.round(
+                                  (roleAgingBuckets.bucket0to15 /
+                                    activeRoles.length) *
+                                    100,
+                                )}%`,
+                        }}
+                      />
+                      <span className="analytics-aging-value">
+                        {roleAgingBuckets.bucket0to15}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="analytics-aging-row">
+                    <div className="analytics-aging-label">16–30 days open</div>
+                    <div className="analytics-aging-bar-track">
+                      <div
+                        className="analytics-aging-bar analytics-aging-bar-warm"
+                        style={{
+                          width:
+                            activeRoles.length === 0
+                              ? '0%'
+                              : `${Math.round(
+                                  (roleAgingBuckets.bucket16to30 /
+                                    activeRoles.length) *
+                                    100,
+                                )}%`,
+                        }}
+                      />
+                      <span className="analytics-aging-value">
+                        {roleAgingBuckets.bucket16to30}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="analytics-aging-row">
+                    <div className="analytics-aging-label">31–60 days open</div>
+                    <div className="analytics-aging-bar-track">
+                      <div
+                        className="analytics-aging-bar analytics-aging-bar-aging"
+                        style={{
+                          width:
+                            activeRoles.length === 0
+                              ? '0%'
+                              : `${Math.round(
+                                  (roleAgingBuckets.bucket31to60 /
+                                    activeRoles.length) *
+                                    100,
+                                )}%`,
+                        }}
+                      />
+                      <span className="analytics-aging-value">
+                        {roleAgingBuckets.bucket31to60}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="analytics-aging-row">
+                    <div className="analytics-aging-label">60+ days open</div>
+                    <div className="analytics-aging-bar-track">
+                      <div
+                        className="analytics-aging-bar analytics-aging-bar-risk"
+                        style={{
+                          width:
+                            activeRoles.length === 0
+                              ? '0%'
+                              : `${Math.round(
+                                  (roleAgingBuckets.bucket60plus /
+                                    activeRoles.length) *
+                                    100,
+                                )}%`,
+                        }}
+                      />
+                      <span className="analytics-aging-value">
+                        {roleAgingBuckets.bucket60plus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
                 <div className="analytics-panel-header">
                   <h3>Client health</h3>
                   <div className="analytics-panel-controls">
@@ -2955,7 +3299,99 @@ function App() {
                     </span>
                   </div>
                 </div>
+                <div className="analytics-client-winrate">
+                  <div className="analytics-client-winrate-header">
+                    <span>Win rate (roles to deals)</span>
+                  </div>
+                  <div className="analytics-client-winrate-bars">
+                    <div className="analytics-client-winrate-row">
+                      <span className="analytics-client-winrate-label">
+                        Closed roles
+                      </span>
+                      <span className="analytics-client-winrate-value">
+                        {clientWinRateStats.closed}
+                      </span>
+                    </div>
+                    <div className="analytics-client-winrate-row">
+                      <span className="analytics-client-winrate-label">
+                        Deals
+                      </span>
+                      <span className="analytics-client-winrate-value">
+                        {clientWinRateStats.deals}
+                      </span>
+                    </div>
+                    <div className="analytics-client-winrate-row">
+                      <span className="analytics-client-winrate-label">
+                        Win %
+                      </span>
+                      <span className="analytics-client-winrate-value">
+                        {clientWinRateStats.closed === 0
+                          ? '0%'
+                          : `${Math.round(
+                              (clientWinRateStats.deals /
+                                clientWinRateStats.closed) *
+                                100,
+                            )}%`}
+                      </span>
+                    </div>
+                    <div className="analytics-client-winrate-track">
+                      <div
+                        className="analytics-client-winrate-bar"
+                        style={{
+                          width:
+                            clientWinRateStats.closed === 0
+                              ? '0%'
+                              : `${Math.round(
+                                  (clientWinRateStats.deals /
+                                    clientWinRateStats.closed) *
+                                    100,
+                                )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
+            <div className="analytics-compare-section">
+              <div className="analytics-section-title">Clients comparison</div>
+              {clientComparisonStats.length === 0 ? (
+                <div className="analytics-empty">
+                  No clients to compare yet.
+                </div>
+              ) : (
+                <div className="submission-table analytics-client-table">
+                  <div className="submission-row submission-row-header">
+                    <div>Client</div>
+                    <div>Active roles</div>
+                    <div>Closed roles</div>
+                    <div>Deals</div>
+                    <div>Win %</div>
+                  </div>
+                  {clientComparisonStats.map((item) => (
+                    <div
+                      key={item.clientName}
+                      className="submission-row submission-row-body"
+                    >
+                      <div className="submission-cell-name">
+                        <span>{item.clientName}</span>
+                      </div>
+                      <div>
+                        <span>{item.activeCount}</span>
+                      </div>
+                      <div>
+                        <span>{item.closedCount}</span>
+                      </div>
+                      <div>
+                        <span>{item.dealsCount}</span>
+                      </div>
+                      <div>
+                        <span>{item.winRate}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="analytics-issues-section">
               <div className="analytics-section-title">Recent notes</div>
@@ -3037,6 +3473,46 @@ function App() {
                   />
                   </div>
                   <div className="field">
+                    <label>Seniority level</label>
+                    <select
+                      value={newRoleForm.level}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          level: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select level</option>
+                      <option value="Junior">Junior</option>
+                      <option value="Mid">Mid</option>
+                      <option value="Senior">Senior</option>
+                      <option value="Lead">Lead</option>
+                      <option value="Director+">Director+</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Function</label>
+                    <select
+                      value={newRoleForm.function}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          function: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select function</option>
+                      <option value="Engineering">Engineering</option>
+                      <option value="Product Management">Product Management</option>
+                      <option value="Sales">Sales</option>
+                      <option value="Talent Acquisition">Talent Acquisition</option>
+                      <option value="Operations">Operations</option>
+                      <option value="Finance / Risk">Finance / Risk</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="field">
                     <label>Client</label>
                     <select
                       value={newRoleForm.client}
@@ -3068,6 +3544,23 @@ function App() {
                       }
                       placeholder="City, region or remote"
                     />
+                  </div>
+                  <div className="field">
+                    <label>Priority</label>
+                    <select
+                      value={newRoleForm.priority}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          priority: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Set priority</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
                   </div>
                   <div className="field">
                     <label>Account manager</label>
