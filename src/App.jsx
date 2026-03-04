@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
-const RECRUITERS_STORAGE_KEY = 'rd_recruiters_v1'
-const CLIENTS_STORAGE_KEY = 'rd_clients_v1'
+const RECRUITERS_STORAGE_KEY = 'rd_recruiters_v2'
+const CLIENTS_STORAGE_KEY = 'rd_clients_v2'
+const ONBOARDING_STORAGE_KEY = 'rd_onboarding_complete_v1'
 
 const ROLE_SUB_STATUS_OPTIONS = {
   Active: ['Open', 'Feedback Pending'],
@@ -10,16 +11,17 @@ const ROLE_SUB_STATUS_OPTIONS = {
 }
 
 const DEFAULT_RECRUITERS = [
-  { id: 'rec-1', name: 'Alex', active: true },
-  { id: 'rec-2', name: 'Jordan', active: true },
-  { id: 'rec-3', name: 'Taylor', active: true },
+  { id: 'rec-1', name: 'Alex Chen', active: true },
+  { id: 'rec-2', name: 'Priya Sharma', active: true },
+  { id: 'rec-3', name: 'Jordan Lee', active: true },
+  { id: 'rec-4', name: 'Maria Gonzalez', active: true },
 ]
 
 const DEFAULT_CLIENTS = [
-  { id: 'client-1', name: 'Acme Corp', active: true },
-  { id: 'client-2', name: 'BlueSky Tech', active: true },
-  { id: 'client-3', name: 'Northstar Finance', active: true },
-  { id: 'client-4', name: 'Innova Labs', active: true },
+  { id: 'client-1', name: 'Acme Commerce', active: true },
+  { id: 'client-2', name: 'BlueSky Technologies', active: true },
+  { id: 'client-3', name: 'Northstar Financial Services', active: true },
+  { id: 'client-4', name: 'Innova Health', active: true },
 ]
 
 const ISSUE_CATEGORY_DEFINITIONS = {
@@ -207,7 +209,72 @@ const analyzeRoleRemark = (remark) => {
 
 const SAMPLE_TODAY_KEY = new Date().toISOString().slice(0, 10)
 
-const DEFAULT_ROLES = []
+const DEFAULT_ROLES = [
+  {
+    id: 'role-1',
+    name: 'Senior Product Manager',
+    jobId: 'REQ-1001',
+    location: 'Remote · Europe',
+    accountManager: 'Alex Chen',
+    client: 'Acme Commerce',
+    recruiterId: 'rec-1',
+    releasedDate: SAMPLE_TODAY_KEY,
+    remarks: 'Own roadmap for checkout and payments experience.',
+    cvsSubmitted: 4,
+    lastCvDate: SAMPLE_TODAY_KEY,
+    cvStatus: 'Interviews in progress',
+    status: 'Active',
+    subStatus: 'Open',
+  },
+  {
+    id: 'role-2',
+    name: 'Full Stack Engineer',
+    jobId: 'REQ-1002',
+    location: 'Bangalore',
+    accountManager: 'Priya Sharma',
+    client: 'BlueSky Technologies',
+    recruiterId: 'rec-2',
+    releasedDate: SAMPLE_TODAY_KEY,
+    remarks: 'React and Node.js on a high-traffic B2B dashboard.',
+    cvsSubmitted: 6,
+    lastCvDate: SAMPLE_TODAY_KEY,
+    cvStatus: 'Profiles under review',
+    status: 'Active',
+    subStatus: 'Open',
+  },
+  {
+    id: 'role-3',
+    name: 'Senior Credit Risk Analyst',
+    jobId: 'REQ-1003',
+    location: 'London',
+    accountManager: 'Alex Chen',
+    client: 'Northstar Financial Services',
+    recruiterId: 'rec-3',
+    releasedDate: SAMPLE_TODAY_KEY,
+    remarks: 'Experience with retail lending portfolios and scorecards.',
+    cvsSubmitted: 3,
+    lastCvDate: SAMPLE_TODAY_KEY,
+    cvStatus: 'Awaiting client feedback',
+    status: 'Active',
+    subStatus: 'Open',
+  },
+  {
+    id: 'role-4',
+    name: 'Talent Acquisition Partner',
+    jobId: 'REQ-1004',
+    location: 'Dubai',
+    accountManager: 'Maria Gonzalez',
+    client: 'Innova Health',
+    recruiterId: 'rec-4',
+    releasedDate: SAMPLE_TODAY_KEY,
+    remarks: 'Build out non-clinical leadership hiring across regions.',
+    cvsSubmitted: 2,
+    lastCvDate: SAMPLE_TODAY_KEY,
+    cvStatus: 'Initial CVs shared',
+    status: 'Active',
+    subStatus: 'Open',
+  },
+]
 
 const DEFAULT_ROLE_ISSUE_INSIGHTS = []
 
@@ -222,9 +289,15 @@ function App() {
   const [roles, setRoles] = useState(DEFAULT_ROLES)
   const [newRoleForm, setNewRoleForm] = useState({
     name: '',
+    jobId: '',
+    location: '',
+    accountManager: '',
     client: '',
     recruiterId: '',
     releasedDate: '',
+    cvsSubmitted: '',
+    lastCvDate: '',
+    cvStatus: '',
     remarks: '',
   })
 
@@ -306,6 +379,9 @@ function App() {
     roleId: '',
     status: 'Active',
     subStatus: 'Open',
+    cvsSubmitted: '',
+    lastCvDate: '',
+    cvStatus: '',
     remarks: '',
   })
 
@@ -323,6 +399,20 @@ function App() {
   const [newClientName, setNewClientName] = useState('')
   const [managePassword, setManagePassword] = useState('')
   const [managePasswordError, setManagePasswordError] = useState('')
+  const [showWelcomeGate, setShowWelcomeGate] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false
+    }
+
+    const onboarded = window.localStorage.getItem(ONBOARDING_STORAGE_KEY)
+    if (onboarded === 'true') {
+      return false
+    }
+
+    return true
+  })
+  const [welcomePassword, setWelcomePassword] = useState('')
+  const [welcomePasswordError, setWelcomePasswordError] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -559,6 +649,39 @@ function App() {
     },
     { ...recruiterStatsFromEntries },
   )
+
+  const recruiterConversion = (() => {
+    const { submissions, interviews, deals } = recruiterStats
+
+    const interviewRate =
+      submissions > 0 ? (interviews / submissions) * 100 : 0
+    const dealFromInterviewRate =
+      interviews > 0 ? (deals / interviews) * 100 : 0
+    const dealFromSubmissionRate =
+      submissions > 0 ? (deals / submissions) * 100 : 0
+
+    return {
+      interviewRate,
+      dealFromInterviewRate,
+      dealFromSubmissionRate,
+    }
+  })()
+
+  const recruiterVolumeMax = Math.max(
+    recruiterStats.submissions,
+    recruiterStats.interviews,
+    recruiterStats.deals,
+  )
+
+  const getRecruiterVolumeWidth = (value) => {
+    if (recruiterVolumeMax === 0) {
+      return '0%'
+    }
+
+    const percentage = Math.round((value / recruiterVolumeMax) * 100)
+    const safePercentage = Math.max(6, percentage)
+    return `${safePercentage}%`
+  }
 
   const recruiterAssignedRolesCount = roles.reduce(
     (accumulator, role) => {
@@ -1365,6 +1488,9 @@ function App() {
         roleId: '',
         status: 'Active',
         subStatus: ROLE_SUB_STATUS_OPTIONS.Active[0],
+        cvsSubmitted: '',
+        lastCvDate: '',
+        cvStatus: '',
         remarks: '',
       })
       setStatusMetricForm({
@@ -1413,6 +1539,23 @@ function App() {
     setManagePasswordError('Incorrect password. Try again.')
   }
 
+  const handleWelcomeSubmit = (event) => {
+    event.preventDefault()
+
+    const normalized = welcomePassword.trim().toLowerCase()
+    if (normalized === 'new user') {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
+      }
+      setWelcomePassword('')
+      setWelcomePasswordError('')
+      setShowWelcomeGate(false)
+      return
+    }
+
+    setWelcomePasswordError('Incorrect password for new users.')
+  }
+
   const handleNewRoleSave = () => {
     if (
       !newRoleForm.name ||
@@ -1426,9 +1569,17 @@ function App() {
     const role = {
       id: `role-${Date.now()}`,
       name: newRoleForm.name,
+      jobId: newRoleForm.jobId || '',
+      location: newRoleForm.location || '',
+      accountManager: newRoleForm.accountManager || '',
       client: newRoleForm.client,
       recruiterId: newRoleForm.recruiterId,
       releasedDate: newRoleForm.releasedDate,
+      cvsSubmitted: newRoleForm.cvsSubmitted
+        ? parseInt(newRoleForm.cvsSubmitted, 10) || 0
+        : 0,
+      lastCvDate: newRoleForm.lastCvDate || '',
+      cvStatus: newRoleForm.cvStatus || '',
       remarks: newRoleForm.remarks,
       status: 'Active',
       subStatus: ROLE_SUB_STATUS_OPTIONS.Active[0],
@@ -1498,6 +1649,12 @@ function App() {
               ...role,
               status: statusRoleForm.status,
               subStatus: statusRoleForm.subStatus,
+              cvsSubmitted:
+                statusRoleForm.cvsSubmitted !== ''
+                  ? parseInt(statusRoleForm.cvsSubmitted, 10) || 0
+                  : role.cvsSubmitted || 0,
+              lastCvDate: statusRoleForm.lastCvDate || role.lastCvDate || '',
+              cvStatus: statusRoleForm.cvStatus || role.cvStatus || '',
               remarks: statusRoleForm.remarks || role.remarks,
             }
           : role,
@@ -1785,6 +1942,38 @@ function App() {
 
   return (
     <div className="app">
+      {showWelcomeGate && (
+        <div className="modal-overlay">
+          <div className="modal modal-glass" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Welcome</h2>
+              <p>Enter the demo password to explore Recruiter&apos;s Diary.</p>
+            </div>
+            <form className="modal-body" onSubmit={handleWelcomeSubmit}>
+              <div className="field">
+                <label>Password for new users</label>
+                <input
+                  type="password"
+                  value={welcomePassword}
+                  onChange={(event) => setWelcomePassword(event.target.value)}
+                  placeholder="new user"
+                />
+              </div>
+              {welcomePasswordError && (
+                <div className="field-error">{welcomePasswordError}</div>
+              )}
+              <div className="modal-footer">
+                <button
+                  type="submit"
+                  className="btn-primary"
+                >
+                  Continue
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-badge">RD</div>
@@ -2214,16 +2403,52 @@ function App() {
                     (recruiter) => recruiter.id === role.recruiterId,
                   )
 
+                  const releasedDate = role.releasedDate
+                    ? new Date(role.releasedDate)
+                    : null
+                  const daysOpen =
+                    releasedDate && !Number.isNaN(releasedDate.getTime())
+                      ? Math.max(
+                          0,
+                          Math.round(
+                            (today.getTime() - releasedDate.getTime()) /
+                              (1000 * 60 * 60 * 24),
+                          ),
+                        )
+                      : null
+
                   return (
                     <div key={role.id} className="people-list-card">
-                      <div className="people-list-name">{role.name}</div>
+                      <div className="people-list-name">
+                        {role.name}
+                        {role.jobId && (
+                          <span className="people-list-submeta-inline">
+                            · {role.jobId}
+                          </span>
+                        )}
+                      </div>
                       <div className="people-list-meta">
                         <span className="people-list-submeta">
                           Client · {role.client}
                         </span>
+                        {role.location && (
+                          <span className="people-list-submeta">
+                            Location · {role.location}
+                          </span>
+                        )}
+                        {role.accountManager && (
+                          <span className="people-list-submeta">
+                            AM · {role.accountManager}
+                          </span>
+                        )}
                         {assignedRecruiter && (
                           <span className="people-list-submeta">
                             Recruiter · {assignedRecruiter.name}
+                          </span>
+                        )}
+                        {typeof daysOpen === 'number' && (
+                          <span className="people-list-submeta">
+                            Open · {daysOpen}d
                           </span>
                         )}
                         <span
@@ -2480,6 +2705,74 @@ function App() {
                     </span>
                   </div>
                 </div>
+                <div className="analytics-ratio-metrics">
+                  <div className="analytics-ratio-metric">
+                    <span className="analytics-ratio-label">Interview rate</span>
+                    <span className="analytics-ratio-value">
+                      {recruiterConversion.interviewRate.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="analytics-ratio-metric">
+                    <span className="analytics-ratio-label">Deals from interviews</span>
+                    <span className="analytics-ratio-value">
+                      {recruiterConversion.dealFromInterviewRate.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="analytics-ratio-metric">
+                    <span className="analytics-ratio-label">Deals from submissions</span>
+                    <span className="analytics-ratio-value">
+                      {recruiterConversion.dealFromSubmissionRate.toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+                <div className="analytics-volume-bars">
+                  <div className="analytics-volume-row">
+                    <span className="analytics-volume-label">Submissions</span>
+                    <div className="analytics-volume-bar-track">
+                      <div
+                        className="analytics-volume-bar analytics-volume-bar-submissions"
+                        style={{
+                          width: getRecruiterVolumeWidth(
+                            recruiterStats.submissions,
+                          ),
+                        }}
+                      />
+                      <span className="analytics-volume-bar-value">
+                        {recruiterStats.submissions}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="analytics-volume-row">
+                    <span className="analytics-volume-label">Interviews</span>
+                    <div className="analytics-volume-bar-track">
+                      <div
+                        className="analytics-volume-bar analytics-volume-bar-interviews"
+                        style={{
+                          width: getRecruiterVolumeWidth(
+                            recruiterStats.interviews,
+                          ),
+                        }}
+                      />
+                      <span className="analytics-volume-bar-value">
+                        {recruiterStats.interviews}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="analytics-volume-row">
+                    <span className="analytics-volume-label">Deals</span>
+                    <div className="analytics-volume-bar-track">
+                      <div
+                        className="analytics-volume-bar analytics-volume-bar-deals"
+                        style={{
+                          width: getRecruiterVolumeWidth(recruiterStats.deals),
+                        }}
+                      />
+                      <span className="analytics-volume-bar-value">
+                        {recruiterStats.deals}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="analytics-panel">
                 <div className="analytics-panel-header">
@@ -2668,8 +2961,22 @@ function App() {
               <p>Add a new mandate to your active roles.</p>
             </div>
             <div className="modal-body">
-              <div className="modal-grid">
-                <div className="field">
+                <div className="modal-grid">
+                  <div className="field">
+                    <label>Job ID</label>
+                    <input
+                      type="text"
+                      value={newRoleForm.jobId}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          jobId: event.target.value,
+                        }))
+                      }
+                      placeholder="REQ-1234"
+                    />
+                  </div>
+                  <div className="field">
                   <label>Role name</label>
                   <input
                     type="text"
@@ -2682,58 +2989,128 @@ function App() {
                     }
                     placeholder="Senior Product Manager"
                   />
-                </div>
-                <div className="field">
-                  <label>Client</label>
-                  <select
-                    value={newRoleForm.client}
-                    onChange={(event) =>
-                      setNewRoleForm((prev) => ({
-                        ...prev,
-                        client: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Select client</option>
-                    {activeClients.map((client) => (
-                      <option key={client.id} value={client.name}>
-                        {client.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Assign recruiter</label>
-                  <select
-                    value={newRoleForm.recruiterId}
-                    onChange={(event) =>
-                      setNewRoleForm((prev) => ({
-                        ...prev,
-                        recruiterId: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Select recruiter</option>
-                    {activeRecruiters.map((recruiter) => (
-                      <option key={recruiter.id} value={recruiter.id}>
-                        {recruiter.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Role released date</label>
-                  <input
-                    type="date"
-                    value={newRoleForm.releasedDate}
-                    onChange={(event) =>
-                      setNewRoleForm((prev) => ({
-                        ...prev,
-                        releasedDate: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                  </div>
+                  <div className="field">
+                    <label>Client</label>
+                    <select
+                      value={newRoleForm.client}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          client: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select client</option>
+                      {activeClients.map((client) => (
+                        <option key={client.id} value={client.name}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Location</label>
+                    <input
+                      type="text"
+                      value={newRoleForm.location}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          location: event.target.value,
+                        }))
+                      }
+                      placeholder="City, region or remote"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Account manager</label>
+                    <input
+                      type="text"
+                      value={newRoleForm.accountManager}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          accountManager: event.target.value,
+                        }))
+                      }
+                      placeholder="Who owns the client side?"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Assign recruiter</label>
+                    <select
+                      value={newRoleForm.recruiterId}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          recruiterId: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select recruiter</option>
+                      {activeRecruiters.map((recruiter) => (
+                        <option key={recruiter.id} value={recruiter.id}>
+                          {recruiter.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Role released date</label>
+                    <input
+                      type="date"
+                      value={newRoleForm.releasedDate}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          releasedDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="field">
+                    <label>CVs submitted</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newRoleForm.cvsSubmitted}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          cvsSubmitted: event.target.value.replace(/[^0-9]/g, ''),
+                        }))
+                      }
+                      placeholder="Total CVs sent so far"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Last CV date</label>
+                    <input
+                      type="date"
+                      value={newRoleForm.lastCvDate}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          lastCvDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="field field-full">
+                    <label>Status of CVs</label>
+                    <input
+                      type="text"
+                      value={newRoleForm.cvStatus}
+                      onChange={(event) =>
+                        setNewRoleForm((prev) => ({
+                          ...prev,
+                          cvStatus: event.target.value,
+                        }))
+                      }
+                      placeholder="Shortlisted, interviews in progress, offer stage..."
+                    />
+                  </div>
                 <div className="field field-full">
                   <label>Remarks</label>
                   <textarea
@@ -2938,6 +3315,34 @@ function App() {
                     </select>
                   </div>
                   <div className="field">
+                    <label>CVs submitted</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={statusRoleForm.cvsSubmitted}
+                      onChange={(event) =>
+                        setStatusRoleForm((prev) => ({
+                          ...prev,
+                          cvsSubmitted: event.target.value.replace(/[^0-9]/g, ''),
+                        }))
+                      }
+                      placeholder="Total CVs sent to client"
+                    />
+                  </div>
+                  <div className="field">
+                    <label>Last CV date</label>
+                    <input
+                      type="date"
+                      value={statusRoleForm.lastCvDate}
+                      onChange={(event) =>
+                        setStatusRoleForm((prev) => ({
+                          ...prev,
+                          lastCvDate: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="field">
                     <label>Role status</label>
                     <select
                       value={statusRoleForm.status}
@@ -2973,6 +3378,20 @@ function App() {
                         ),
                       )}
                     </select>
+                  </div>
+                  <div className="field field-full">
+                    <label>Status of CVs</label>
+                    <input
+                      type="text"
+                      value={statusRoleForm.cvStatus}
+                      onChange={(event) =>
+                        setStatusRoleForm((prev) => ({
+                          ...prev,
+                          cvStatus: event.target.value,
+                        }))
+                      }
+                      placeholder="Shortlisted, interviews in progress, offer stage..."
+                    />
                   </div>
                   <div className="field field-full">
                     <label>Remarks</label>

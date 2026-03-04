@@ -681,6 +681,90 @@
   color: #0f172a;
 }
 
+.analytics-ratio-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.analytics-ratio-metric {
+  min-width: 0;
+  flex: 1 1 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.analytics-ratio-label {
+  font-size: 0.72rem;
+  color: #cbd5f5;
+}
+
+.analytics-ratio-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.analytics-volume-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.analytics-volume-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.analytics-volume-label {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  font-size: 0.74rem;
+  color: #6b7280;
+}
+
+.analytics-volume-bar-track {
+  flex: 1;
+  position: relative;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+}
+
+.analytics-volume-bar {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transform-origin: left center;
+}
+
+.analytics-volume-bar-submissions {
+  background: linear-gradient(90deg, #0ea5e9, #22c55e);
+}
+
+.analytics-volume-bar-interviews {
+  background: linear-gradient(90deg, #6366f1, #22c55e);
+}
+
+.analytics-volume-bar-deals {
+  background: linear-gradient(90deg, #f97316, #22c55e);
+}
+
+.analytics-volume-bar-value {
+  margin-left: 0.5rem;
+  font-size: 0.78rem;
+  color: #4b5563;
+}
+
 .submission-cell-name span {
   font-size: 0.85rem;
   color: #e5f2ff;
@@ -887,6 +971,13 @@
 
 .people-list-submeta {
   font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.people-list-submeta-inline {
+  margin-left: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 400;
   color: #9ca3af;
 }
 
